@@ -1,18 +1,19 @@
-const express = require("express");
-const router = express.Router();
-const shoeController = require("../controllers/shoeController");
-const authMiddleware = require("../middlewares/authMiddleware");
+const Shoe = require("../models/Shoe");
 
-// Rota para criar um novo sapato
-router.post("/", authMiddleware, shoeController.createShoe);
+exports.createShoe = async (req, res) => {
+  try {
+    const { name, price, size } = req.body;
 
-// Rota para obter todos os sapatos
-router.get("/", authMiddleware, shoeController.getShoes);
+    if (!name || !price || !size || price <= 0 || size <= 0) {
+      return res.status(400).json({ message: "Dados de entrada inválidos." });
+    }
 
-// Rota para atualizar um sapato por ID
-router.put("/:id", authMiddleware, shoeController.updateShoe);
+    const shoe = new Shoe({ name, price, size });
+    await shoe.save();
 
-// Rota para excluir um sapato por ID
-router.delete("/:id", authMiddleware, shoeController.deleteShoe);
-
-module.exports = router;
+    res.status(201).json({ message: "Sapato criado com sucesso." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao criar o sapato." });
+  }
+};

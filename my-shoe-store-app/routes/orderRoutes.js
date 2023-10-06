@@ -1,18 +1,37 @@
-const express = require("express");
-const router = express.Router();
-const orderController = require("../controllers/orderController");
-const authMiddleware = require("../middlewares/authMiddleware");
+const Order = require("../models/Order");
+// Cria um novo pedido
+exports.createOrder = async (req, res) => {
+  try {
+    const { shoeId, quantity } = req.body;
 
-// Rota para criar um novo pedido
-router.post("/", authMiddleware, orderController.createOrder);
+    if (!shoeId || !quantity || quantity <= 0) {
+      return res.status(400).json({ message: "Dados de entrada inválidos." });
+    }
 
-// Rota para obter todos os pedidos
-router.get("/", authMiddleware, orderController.getOrders);
+    // Crie um novo pedido e salve-o no banco de dados
+    const order = new Order({
+      shoeId,
+      quantity,
+      userId: req.user._id,
+    });
 
-// Rota para atualizar um pedido por ID
-router.put("/:id", authMiddleware, orderController.updateOrder);
+    await order.save();
 
-// Rota para excluir um pedido por ID
-router.delete("/:id", authMiddleware, orderController.deleteOrder);
+    res.status(201).json({ message: "Pedido criado com sucesso." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao criar o pedido." });
+  }
+};
 
-module.exports = router;
+// Lista todos os pedidos
+exports.listOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.user._id });
+
+    res.status(200).json({ orders });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao listar os pedidos." });
+  }
+};

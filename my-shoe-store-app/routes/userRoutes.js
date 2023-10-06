@@ -1,18 +1,26 @@
-const express = require("express");
-const router = express.Router();
-const userController = require("../controllers/userController");
-const authMiddleware = require("../middlewares/authMiddleware");
+const User = require("../models/User");
 
-// Rota para criar um novo usuário
-router.post("/", userController.createUser);
+exports.createUser = async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
 
-// Rota para obter todos os usuários
-router.get("/", authMiddleware, userController.getUsers);
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "Dados de entrada inválidos." });
+    }
 
-// Rota para atualizar um usuário por ID
-router.put("/:id", authMiddleware, userController.updateUser);
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Usuário com este e-mail já existe." });
+    }
 
-// Rota para excluir um usuário por ID
-router.delete("/:id", authMiddleware, userController.deleteUser);
+    const user = new User({ username, email, password });
+    await user.save();
 
-module.exports = router;
+    res.status(201).json({ message: "Usuário criado com sucesso." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao criar o usuário." });
+  }
+};
